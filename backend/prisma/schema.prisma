@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String      @id @default(uuid())
+  email       String      @unique
+  password    String
+  projects    Project[]   @relation("UserProjects")     // user sebagai pemilik project
+  tasks       Task[]      @relation("AssignedTasks")    // user sebagai assignee task
+  memberships Membership[]                             // user sebagai member project
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Project {
+  id        String       @id @default(uuid())
+  name      String
+  ownerId   String
+  owner     User         @relation("UserProjects", fields: [ownerId], references: [id])
+  tasks     Task[]
+  members   Membership[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Membership {
+  id        String   @id @default(uuid())
+  userId    String
+  projectId String
+
+  user      User     @relation(fields: [userId], references: [id])
+  project   Project  @relation(fields: [projectId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, projectId])
+}
+
+model Task {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  status      String
+  projectId   String
+  assigneeId  String?
+
+  project     Project  @relation(fields: [projectId], references: [id])
+  assignee    User?     @relation("AssignedTasks", fields: [assigneeId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
